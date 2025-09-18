@@ -493,8 +493,8 @@ class LolWikiDataHandler:
                 projectile = to_enum_like(projectile)
 
             recharge_rate = data.get("recharge")
-            if recharge_rate:
-                _, recharge_rate = ParsingAndRegex.regex_simple_flat(recharge_rate, nvalues)  # ignore units
+            # if recharge_rate:
+            #     _, recharge_rate = ParsingAndRegex.regex_simple_flat(recharge_rate, nvalues)  # ignore units
 
             effects = []
             for ending in ["", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]:
@@ -722,7 +722,7 @@ class LolWikiDataHandler:
                 start = i
                 spans[i] = "{"
         spans = spans[start:]
-        test1 = re.compile("\w -- \w|.\w--\w|\w --\w|.\w--\s")
+        test1 = re.compile("[a-zA-Z0-9_] -- [a-zA-Z0-9_]|.[a-zA-Z0-9_]--[a-zA-Z0-9_]|[a-zA-Z0-9_] --[a-zA-Z0-9_]|.[a-zA-Z0-9_]--[ \t\n\r\f\v]")
         for i, span in enumerate(spans):
             if span in ["-- </pre>", "-- [[Category:Lua]]"]:
                 spans[i] = ""
@@ -934,20 +934,24 @@ class ParsingAndRegex:
             return ParsingAndRegex.regex_slash_separated(string, nvalues)
         elif len(ParsingAndRegex.rc_based_on_level.findall(string)) > 0:
             level = ParsingAndRegex.rc_based_on_level.findall(string)
+            print(f"level: {level}")
             assert len(level) == 1
             start, stop = level[0]
             start, stop = eval(start), eval(stop)
             values = ParsingAndRegex.parse_based_on_level(start, stop)
             parsed = f"{start} − {stop} (based on level)"
             not_parsed = string.split(parsed)
+            print(f"not_parsed: {not_parsed}")
             assert len(not_parsed) >= 2
             if len(not_parsed) != 2:  # see below
                 not_parsed = not_parsed[0], parsed.join(not_parsed[1:])
+            print(f"values: {values}")
             assert len(values) == 18
             return not_parsed, values
         elif len(numbers) - len(re.findall(r" per \d", string)) == 1 + string.count("(+ "):
             number = numbers[0]
             not_parsed = string.split(number)
+            print(f"not_parsed: {not_parsed}")
             assert len(not_parsed) >= 2
             if len(not_parsed) != 2:  # Fix e.g. `15 per 150 AP`
                 not_parsed = not_parsed[0], number.join(not_parsed[1:])
@@ -955,6 +959,7 @@ class ParsingAndRegex:
             if nvalues is None:
                 nvalues = len(numbers)
             values = [number for _ in range(nvalues)]
+            print(f"values: {values}")
             assert len(values) == nvalues
             return not_parsed, values
         raise UnparsableLeveling(f"Could not parse a simple flat value: {string}")
